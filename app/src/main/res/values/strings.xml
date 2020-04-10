@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">GearBox</string>
     <string name="stl_load_progress_title">STL文件加载中...</string>
-    <string name="stl_load_progress_message">请稍后...</string>>
+    <string name="stl_load_progress_message">请稍后...</string>
+    <string name="error_fetch_data">STL文件解析失败.</string>
 </resources>

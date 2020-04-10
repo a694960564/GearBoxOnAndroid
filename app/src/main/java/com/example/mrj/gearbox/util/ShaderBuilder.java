@@ -6,8 +6,8 @@ import android.util.Log;
 /**
  * Created by Mr.J on 2020/4/7.
  */
-public class Shader {
-    private static final String TAG = "ShaderHelper";
+public class ShaderBuilder {
+    private static final String TAG = "ShaderBuilder";
     private static int compileVertexShader(String shaderCode){
         return compileShader(GLES20.GL_VERTEX_SHADER,shaderCode);
     }
@@ -17,7 +17,7 @@ public class Shader {
     }
     private static int compileShader(int type, String shaderCode){
         final int shaderObjectId = GLES20.glCreateShader(type);
-
+//        Log.d(TAG,"shaderCode:"+"\n"+shaderCode);
         if(shaderObjectId == 0){
             Log.d(TAG, "Could not create new shader.");
             return 0;
@@ -68,7 +68,7 @@ public class Shader {
         return validateStatus[0] != 0;
     }
 
-    private static int buildProgram(String vertexShaderSource, String fragmentShaderSource){
+    public static int buildProgram(String vertexShaderSource, String fragmentShaderSource){
         int program;
         int vertexShader = compileVertexShader(vertexShaderSource);
         int fragmentShader = compileFragmentShader(fragmentShaderSource);

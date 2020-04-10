@@ -5,59 +5,79 @@ package com.example.mrj.gearbox.object;
  */
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.opengl.GLES20;
+import android.opengl.Matrix;
 import android.os.AsyncTask;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.example.mrj.gearbox.R;
+import com.example.mrj.gearbox.util.TextReader;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Model {
     private String TAG = "Model:";
     private int ID;
-    private int numofvertex;
     private String path;
-    private float[] color;
+    private float[] color = new float[3];
     private float[] vertex = null;
     private float[] normal = null;
+    private FloatBuffer vertexBuffer;
     private int triangle_size = 0;
     private float[] modelMatrix = new float[16];
+    private float[] modelViewProjectionMatrix = new float[16];
     private float maxX;
     private float maxY;
     private float maxZ;
     private float minX;
     private float minY;
     private float minZ;
-    private List<Float> normalList;
-    private void adjustMaxMin(float x, float y, float z) {
-        if (x > maxX) {
-            maxX = x;
-        }
-        if (y > maxY) {
-            maxY = y;
-        }
-        if (z > maxZ) {
-            maxZ = z;
-        }
-        if (x < minX) {
-            minX = x;
-        }
-        if (y < minY) {
-            minY = y;
-        }
-        if (z < minZ) {
-            minZ = z;
+    int a_Position;
+    int u_MVPMatrix;
+    public boolean show;
+    public Model(String name, int stlID,  Context context, int program){
+        this.ID = program;
+//        this.path = path;
+//        this.color = color;
+        show = false;
+        readerSTL(TextReader.readTextFileFromResource(context, stlID), context);
+        TAG += name;
+        Matrix.setIdentityM(modelMatrix, 0);
+        a_Position = GLES20.glGetAttribLocation(program, "a_Position");
+        u_MVPMatrix = GLES20.glGetUniformLocation(program, "u_MVPMatrix");
+    }
+    public  void initialize(float[] modelMatrix){
+        this.modelMatrix = modelMatrix;
+    }
+    public void draw(float[] viewProjectionMatrix){
+        if(show){
+            vertexBuffer.position(0);
+            GLES20.glVertexAttribPointer(a_Position, 3, GLES20.GL_FLOAT, false, 12, vertexBuffer);
+            GLES20.glEnableVertexAttribArray(0);
+            Matrix.multiplyMM(modelViewProjectionMatrix, 0, viewProjectionMatrix, 0, modelMatrix, 0);
+            GLES20.glUniformMatrix4fv(u_MVPMatrix, 1, false, modelViewProjectionMatrix, 0);
+            GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, triangle_size * 3);
         }
     }
-    private boolean readerSTL(final byte[] stlBytes, final Context context){
+    public void rotate(float degree, float[] axis){
+
+    }
+    public void translate(float[] translate){
+
+    }
+
+    private boolean readerSTL(final String stlResource, final Context context){
         maxX = Float.MIN_VALUE;
         maxY = Float.MIN_VALUE;
         maxZ = Float.MIN_VALUE;
         minX = Float.MAX_VALUE;
         minY = Float.MAX_VALUE;
         minZ = Float.MAX_VALUE;
-        normalList = new ArrayList<Float>();
         final ProgressDialog progressDialog = new ProgressDialog(context);
         progressDialog.setTitle(R.string.stl_load_progress_title);
         progressDialog.setMax(0);
@@ -66,9 +86,8 @@ public class Model {
         progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
         progressDialog.setCancelable(false);
         progressDialog.show();
-        final AsyncTask<byte[], Integer, float[]> task = new AsyncTask<byte[], Integer, float[]>() {
+        final AsyncTask<String, Integer, float[]> task = new AsyncTask<String, Integer, float[]>() {
             float[] processText(String stlText) throws Exception{
-                normalList.clear();
                 String[] stlLines = stlText.split("\n");
                 triangle_size = (stlLines.length - 2) / 7;
                 vertex = new float[triangle_size * 9];
@@ -105,11 +124,11 @@ public class Model {
                 return vertex;
             }
             @Override
-            protected float[] doInBackground(byte[]... stlBytes) {
+            protected float[] doInBackground(String... stl) {
                 float[] processResult = null;
                 try{
                     Log.v(TAG,"读取中");
-                    processResult = processText(new String(stlBytes[0]));
+                    processResult = processText(stl[0]);
                 }catch(Exception e){
                 }
                 if(processResult != null && processResult.length > 0
@@ -126,33 +145,47 @@ public class Model {
 
             @Override
             protected void onPostExecute(float[] vertexList){
-
+                if(normal.length<1 || vertex.length<1){
+                    Toast.makeText(context, context.getString(R.string.error_fetch_data), Toast.LENGTH_LONG).show();
+                    progressDialog.dismiss();
+                    return;
+                }
+                vertexBuffer = ByteBuffer
+                        .allocateDirect(vertex.length * 4)
+                        .order(ByteOrder.nativeOrder())
+                        .asFloatBuffer()
+                        .put(vertex);
+                Log.v(TAG,"读取完成!");
+                show = true;
             }
         };
 
         try{
-            task.execute(stlBytes);
+            task.execute(stlResource);
         }catch(Exception e){
             return false;
         }
         return true;
     }
-    public Model(int id,  String name, float[] color){
-        this.ID = id;
-        this.path = path;
-        this.color = color;
-        TAG.concat(name);
-    }
-    public  void initialize(float[] modelMatrix){
 
-    }
-    public void draw(float[] draw){
-
-    }
-    public void rotate(float degree, float[] axis){
-
-    }
-    public void translate(float[] translate){
-
+    private void adjustMaxMin(float x, float y, float z) {
+        if (x > maxX) {
+            maxX = x;
+        }
+        if (y > maxY) {
+            maxY = y;
+        }
+        if (z > maxZ) {
+            maxZ = z;
+        }
+        if (x < minX) {
+            minX = x;
+        }
+        if (y < minY) {
+            minY = y;
+        }
+        if (z < minZ) {
+            minZ = z;
+        }
     }
 }
