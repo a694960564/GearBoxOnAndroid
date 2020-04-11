@@ -22,55 +22,78 @@ import java.util.List;
 
 public class Model {
     private String TAG = "Model:";
-    private int ID;
-    private String path;
-    private float[] color = new float[3];
+    static private int ID;
+    private float[] color = new float[4];
     private float[] vertex = null;
     private float[] normal = null;
     private FloatBuffer vertexBuffer;
+    private FloatBuffer normalBuffer;
     private int triangle_size = 0;
     private float[] modelMatrix = new float[16];
-    private float[] modelViewProjectionMatrix = new float[16];
+    private static float[] modelViewProjectionMatrix = new float[16];
     private float maxX;
     private float maxY;
     private float maxZ;
     private float minX;
     private float minY;
     private float minZ;
-    int a_Position;
-    int u_MVPMatrix;
+    static int a_Position;
+    static int u_MVPMatrix;
+    static int u_Color;
+    static int u_ObjectColor;
+    static int u_ModelMatrix;
+    static int a_Normal;
     public boolean show;
-    public Model(String name, int stlID,  Context context, int program){
+    public Model(String name, int stlID,  Context context, int program, float r, float g, float b){
+        color[0] = r;
+        color[1] = g;
+        color[2] = b;
+        color[3] = 1;
         this.ID = program;
-//        this.path = path;
-//        this.color = color;
         show = false;
         readerSTL(TextReader.readTextFileFromResource(context, stlID), context);
         TAG += name;
         Matrix.setIdentityM(modelMatrix, 0);
         a_Position = GLES20.glGetAttribLocation(program, "a_Position");
+        a_Normal = GLES20.glGetAttribLocation(program, "a_Normal");
         u_MVPMatrix = GLES20.glGetUniformLocation(program, "u_MVPMatrix");
+        u_Color = GLES20.glGetUniformLocation(program, "u_Color");
+        u_ObjectColor = GLES20.glGetUniformLocation(program, "u_ObjectColor");
+        u_ModelMatrix = GLES20.glGetUniformLocation(program, "u_ModelMatrix");
     }
-    public  void initialize(float[] modelMatrix){
-        this.modelMatrix = modelMatrix;
-    }
+
     public void draw(float[] viewProjectionMatrix){
         if(show){
             vertexBuffer.position(0);
             GLES20.glVertexAttribPointer(a_Position, 3, GLES20.GL_FLOAT, false, 12, vertexBuffer);
-            GLES20.glEnableVertexAttribArray(0);
+            GLES20.glEnableVertexAttribArray(a_Position);
+            normalBuffer.position(0);
+            GLES20.glVertexAttribPointer(a_Normal, 3, GLES20.GL_FLOAT, false, 12, normalBuffer);
+            GLES20.glEnableVertexAttribArray(a_Normal);
+            GLES20.glUniform3f(u_ObjectColor, color[0], color[1], color[2]);
+            GLES20.glUniformMatrix4fv(u_ModelMatrix, 1, false, modelMatrix, 0);
             Matrix.multiplyMM(modelViewProjectionMatrix, 0, viewProjectionMatrix, 0, modelMatrix, 0);
             GLES20.glUniformMatrix4fv(u_MVPMatrix, 1, false, modelViewProjectionMatrix, 0);
             GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, triangle_size * 3);
         }
     }
-    public void rotate(float degree, float[] axis){
-
+    public void setColor(float r, float g, float b, float v){
+        color[0] = r;
+        color[1] = g;
+        color[2] = b;
+        color[3] = v;
     }
-    public void translate(float[] translate){
-
+    public void rotate(float degree, float x, float y, float z){
+        Matrix.rotateM(modelMatrix, 0, degree, x, y, z);
+    }
+    public void translate(float x, float y, float z){
+        Matrix.translateM(modelMatrix, 0, x, y, z);
     }
 
+    public void IdentityTranslate(float x, float y, float z){
+        Matrix.setIdentityM(modelMatrix, 0);
+        Matrix.translateM(modelMatrix,0, x, y, z);
+    }
     private boolean readerSTL(final String stlResource, final Context context){
         maxX = Float.MIN_VALUE;
         maxY = Float.MIN_VALUE;
@@ -127,7 +150,7 @@ public class Model {
             protected float[] doInBackground(String... stl) {
                 float[] processResult = null;
                 try{
-                    Log.v(TAG,"读取中");
+                    Log.v(TAG,TAG+"读取中");
                     processResult = processText(stl[0]);
                 }catch(Exception e){
                 }
@@ -155,7 +178,12 @@ public class Model {
                         .order(ByteOrder.nativeOrder())
                         .asFloatBuffer()
                         .put(vertex);
-                Log.v(TAG,"读取完成!");
+                normalBuffer = ByteBuffer
+                        .allocateDirect(normal.length * 4)
+                        .order(ByteOrder.nativeOrder())
+                        .asFloatBuffer()
+                        .put(normal);
+                Log.v(TAG,TAG+"读取完成!");
                 show = true;
             }
         };

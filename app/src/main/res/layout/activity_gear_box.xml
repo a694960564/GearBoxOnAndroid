@@ -9,7 +9,7 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context=".GearBoxActivity">
 
-    <android.opengl.GLSurfaceView
+    <FrameLayout
         android:layout_width = "fill_parent"
         android:layout_height = "fill_parent"
         android:id="@+id/GearBoxGLView"/>
