@@ -101,21 +101,21 @@ public class Model {
         minX = Float.MAX_VALUE;
         minY = Float.MAX_VALUE;
         minZ = Float.MAX_VALUE;
-        final ProgressDialog progressDialog = new ProgressDialog(context);
-        progressDialog.setTitle(R.string.stl_load_progress_title);
-        progressDialog.setMax(0);
-        progressDialog.setMessage(context.getString(R.string.stl_load_progress_message));
-        progressDialog.setIndeterminate(false);
-        progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-        progressDialog.setCancelable(false);
-        progressDialog.show();
+//        final ProgressDialog progressDialog = new ProgressDialog(context);
+//        progressDialog.setTitle(R.string.stl_load_progress_title);
+//        progressDialog.setMax(0);
+//        progressDialog.setMessage(context.getString(R.string.stl_load_progress_message));
+//        progressDialog.setIndeterminate(false);
+//        progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+//        progressDialog.setCancelable(false);
+//        progressDialog.show();
         final AsyncTask<String, Integer, float[]> task = new AsyncTask<String, Integer, float[]>() {
             float[] processText(String stlText) throws Exception{
                 String[] stlLines = stlText.split("\n");
                 triangle_size = (stlLines.length - 2) / 7;
                 vertex = new float[triangle_size * 9];
                 normal = new float[triangle_size * 9];
-                progressDialog.setMax(stlLines.length);
+//                progressDialog.setMax(stlLines.length);
                 int normal_num = 0;
                 int vertex_num = 0;
                 for (int i = 0;i < stlLines.length; i++){
@@ -163,14 +163,14 @@ public class Model {
 
             @Override
             protected void onProgressUpdate(Integer...values){
-                progressDialog.setProgress(values[0]);
+//                progressDialog.setProgress(values[0]);
             }
 
             @Override
             protected void onPostExecute(float[] vertexList){
                 if(normal.length<1 || vertex.length<1){
                     Toast.makeText(context, context.getString(R.string.error_fetch_data), Toast.LENGTH_LONG).show();
-                    progressDialog.dismiss();
+//                    progressDialog.dismiss();
                     return;
                 }
                 vertexBuffer = ByteBuffer
